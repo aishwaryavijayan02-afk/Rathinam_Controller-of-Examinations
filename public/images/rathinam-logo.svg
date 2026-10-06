@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 554 187" width="554" height="187">
+  <!-- Left Concentric Circles Symbol -->
+  <g transform="translate(24, 18)">
+    <!-- Top Orange Ring -->
+    <circle cx="48" cy="28" r="22" fill="#f97316"/>
+    <circle cx="48" cy="28" r="12" fill="#030c27"/>
+    <circle cx="48" cy="28" r="5.5" fill="#f97316"/>
+
+    <!-- Bottom Left Blue Ring -->
+    <circle cx="24" cy="68" r="22" fill="#0284c7"/>
+    <circle cx="24" cy="68" r="12" fill="#030c27"/>
+    <circle cx="24" cy="68" r="5.5" fill="#0284c7"/>
+
+    <!-- Bottom Right Green Ring -->
+    <circle cx="72" cy="68" r="22" fill="#84cc16"/>
+    <circle cx="72" cy="68" r="12" fill="#030c27"/>
+    <circle cx="72" cy="68" r="5.5" fill="#84cc16"/>
+
+    <!-- RATHINAM under Symbol with CAPITAL 'A' -->
+    <text x="48" y="116" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Arial Black', sans-serif" font-weight="900" font-size="14.5" fill="#86269b" letter-spacing="1.5">RATHIN<tspan fill="#f97316">A</tspan>M</text>
+  </g>
+
+  <!-- Vertical Divider Line -->
+  <line x1="136" y1="18" x2="136" y2="150" stroke="#1d4ed8" stroke-width="2.8" stroke-linecap="round"/>
+
+  <!-- Right Side Wordmark & Typography -->
+  <g transform="translate(160, 18)">
+    <!-- Main RATHINAM with CAPITAL 'A' -->
+    <text x="0" y="46" font-family="'Plus Jakarta Sans', 'Arial Black', sans-serif" font-weight="900" font-size="52" fill="#86269b" letter-spacing="3">RATHIN<tspan fill="#f97316">A</tspan>M</text>
+
+    <!-- Multi-color Underline Stripe -->
+    <g transform="translate(0, 58)">
+      <rect x="0" y="0" width="112" height="6.5" rx="2" fill="#f97316"/>
+      <rect x="116" y="0" width="152" height="6.5" rx="2" fill="#0284c7"/>
+      <rect x="272" y="0" width="102" height="6.5" rx="2" fill="#84cc16"/>
+    </g>
+
+    <!-- GROUP OF INSTITUTIONS in SOLID BRIGHT WHITE -->
+    <text x="0" y="94" font-family="'Plus Jakarta Sans', 'Arial Black', sans-serif" font-weight="900" font-size="23" fill="#ffffff" letter-spacing="3.5">GROUP OF INSTITUTIONS</text>
+
+    <!-- EXAM CELL Row -->
+    <g transform="translate(0, 118)">
+      <!-- Left Orange Dot -->
+      <circle cx="5" cy="6" r="4.5" fill="#f97316"/>
+      <!-- Left Blue Line -->
+      <line x1="16" y1="6" x2="84" y2="6" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Orange Text -->
+      <text x="190" y="13" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Arial Black', sans-serif" font-weight="900" font-size="20.5" fill="#f97316" letter-spacing="4">EXAM CELL</text>
+      <!-- Right Blue Line -->
+      <line x1="296" y1="6" x2="364" y2="6" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Right Orange Dot -->
+      <circle cx="374" cy="6" r="4.5" fill="#f97316"/>
+    </g>
+  </g>
+</svg>
