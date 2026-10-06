@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -358,7 +358,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
           
           {/* GitHub Link */}
           <a
-            href="https://github.com/Vigoreddy/Rathinam_Controller-of-Examinations"
+            href="https://github.com/aishwaryavijayan02-afk/Rathinam_Controller-of-Examinations"
             target="_blank"
             rel="noopener noreferrer"
             className="header-icon-btn-3d"
