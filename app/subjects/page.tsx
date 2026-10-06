@@ -41,6 +41,7 @@ import {
   Sprout,
   Palette,
   ShieldCheck,
+  Eye,
   EyeOff,
   Clock,
   Tag,
@@ -1546,7 +1547,7 @@ export default function DepartmentManagementPage() {
             </div>
 
 
-                        {/* ================= Staff Profiles Section (School of Media Only) ================= */}
+                                    {/* ================= Staff Profiles Section (School of Media Only) ================= */}
             {showStaffProfiles && (
               <div
                 id="staff-profiles-section"
@@ -1612,7 +1613,7 @@ export default function DepartmentManagementPage() {
                         )}
                       </div>
                       <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                        School of Fashion Design, Media and Performing Arts â€” Faculty Profiles
+                        School of Fashion Design, Media and Performing Arts - Faculty Profiles
                       </h3>
                       <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#64748b" }}>
                         Click on any faculty card to view full profile details. Edit option is available for the logged-in user.
@@ -1643,12 +1644,12 @@ export default function DepartmentManagementPage() {
                 >
                   {mediaStaffList.map((staff) => {
                     const initials = staff.name
-                      .replace(/Dr\.|Prof\.|Mr\.|Mrs\.|Ms\./gi, "")
+                      .replace(/Dr.|Prof.|Mr.|Mrs.|Ms./gi, "")
                       .trim()
                       .split(" ")
                       .filter(Boolean)
                       .slice(0, 2)
-                      .map((p: string) => p[0].toUpperCase())
+                      .map((p) => p[0].toUpperCase())
                       .join("");
                     const isMyProfile = isCurrentUserProfile(staff);
 
@@ -1747,6 +1748,9 @@ export default function DepartmentManagementPage() {
                                 {isMyProfile && (
                                   <span
                                     style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px",
                                       background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
                                       color: "#ffffff",
                                       fontSize: "10px",
@@ -1756,7 +1760,7 @@ export default function DepartmentManagementPage() {
                                       boxShadow: "0 2px 6px rgba(79, 70, 229, 0.3)",
                                     }}
                                   >
-                                    âœ¨ You (Logged In)
+                                    <Sparkles size={9} /> You (Logged In)
                                   </span>
                                 )}
                               </div>
@@ -1769,6 +1773,9 @@ export default function DepartmentManagementPage() {
                             </div>
                             <span
                               style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "5px",
                                 background: "#dcfce7",
                                 color: "#16a34a",
                                 fontSize: "11px",
@@ -1779,7 +1786,8 @@ export default function DepartmentManagementPage() {
                                 flexShrink: 0,
                               }}
                             >
-                              â— Active
+                              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#16a34a" }} />
+                              Active
                             </span>
                           </div>
 
@@ -1800,20 +1808,25 @@ export default function DepartmentManagementPage() {
                               >
                                 Academic & Contact
                               </div>
-                              <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px" }}>
-                                ðŸŽ“ {staff.qualification}
+                              <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <GraduationCap size={13} color="#64748b" />
+                                <span>{staff.qualification}</span>
                               </div>
-                              <div style={{ fontSize: "12px", color: "#6366f1", marginBottom: "5px" }}>
-                                âœ‰ {staff.email}
+                              <div style={{ fontSize: "12px", color: "#6366f1", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Mail size={13} color="#6366f1" />
+                                <span>{staff.email}</span>
                               </div>
-                              <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px" }}>
-                                ðŸ“ž {staff.phone}
+                              <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Phone size={13} color="#64748b" />
+                                <span>{staff.phone}</span>
                               </div>
-                              <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px" }}>
-                                ðŸ« {staff.school}
+                              <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Building2 size={13} color="#64748b" />
+                                <span>{staff.school}</span>
                               </div>
-                              <div style={{ fontSize: "12px", color: "#64748b" }}>
-                                Reporting: <span style={{ fontWeight: 600 }}>{staff.reportingOfficerName}</span>
+                              <div style={{ fontSize: "12px", color: "#64748b", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <UserCheck size={13} color="#9333ea" />
+                                <span>Reporting: <strong style={{ color: "#0f172a" }}>{staff.reportingOfficerName}</strong></span>
                               </div>
                             </div>
                             <div>
@@ -1846,7 +1859,8 @@ export default function DepartmentManagementPage() {
                                     marginRight: "4px",
                                   }}
                                 >
-                                  ðŸ”¬ {sub}
+                                  <BookOpen size={11} color="#4f46e5" />
+                                  <span>{sub}</span>
                                 </div>
                               ))}
                               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "6px" }}>
@@ -1929,7 +1943,8 @@ export default function DepartmentManagementPage() {
                               e.currentTarget.style.color = "#334155";
                             }}
                           >
-                            <span>ðŸ‘ View Profile</span>
+                            <Eye size={13} color="#475569" />
+                            <span>View Profile</span>
                           </button>
 
                           {/* EDIT OPTION: ONLY FOR LOGGED IN USER */}
@@ -1967,7 +1982,8 @@ export default function DepartmentManagementPage() {
                                 e.currentTarget.style.boxShadow = "0 2px 8px rgba(79, 70, 229, 0.25)";
                               }}
                             >
-                              <span>âœ Edit Profile</span>
+                              <Edit3 size={13} color="#ffffff" />
+                              <span>Edit Profile</span>
                             </button>
                           )}
                         </div>
@@ -2041,12 +2057,12 @@ export default function DepartmentManagementPage() {
                           }}
                         >
                           {selectedStaffProfile.name
-                            .replace(/Dr\.|Prof\.|Mr\.|Mrs\.|Ms\./gi, "")
+                            .replace(/Dr.|Prof.|Mr.|Mrs.|Ms./gi, "")
                             .trim()
                             .split(" ")
                             .filter(Boolean)
                             .slice(0, 2)
-                            .map((p: string) => p[0].toUpperCase())
+                            .map((p) => p[0].toUpperCase())
                             .join("")}
                         </div>
                         <div>
@@ -2097,7 +2113,7 @@ export default function DepartmentManagementPage() {
                                   boxShadow: "0 2px 6px rgba(22, 163, 74, 0.3)",
                                 }}
                               >
-                                âœ“ Save Changes
+                                Save Changes
                               </button>
                               <button
                                 type="button"
@@ -2138,7 +2154,8 @@ export default function DepartmentManagementPage() {
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                               }}
                             >
-                              <span>âœ Edit Profile</span>
+                              <Edit3 size={12} color="#4f46e5" />
+                              <span>Edit Profile</span>
                             </button>
                           )
                         )}
@@ -2156,7 +2173,7 @@ export default function DepartmentManagementPage() {
                               fontWeight: 700,
                             }}
                           >
-                            ðŸ”’ View Only
+                            View Only
                           </span>
                         )}
 
@@ -2178,7 +2195,7 @@ export default function DepartmentManagementPage() {
                             fontWeight: 700,
                           }}
                         >
-                          âœ•
+                          X
                         </button>
                       </div>
                     </div>
@@ -2196,10 +2213,13 @@ export default function DepartmentManagementPage() {
                           borderRadius: "20px",
                         }}
                       >
-                        ðŸªª {selectedStaffProfile.employeeId}
+                        ID: {selectedStaffProfile.employeeId}
                       </span>
                       <span
                         style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
                           background: "#dcfce7",
                           color: "#16a34a",
                           fontSize: "11px",
@@ -2208,7 +2228,8 @@ export default function DepartmentManagementPage() {
                           borderRadius: "20px",
                         }}
                       >
-                        â— Active Faculty
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#16a34a" }} />
+                        Active Faculty
                       </span>
                       <span
                         style={{
@@ -2220,7 +2241,7 @@ export default function DepartmentManagementPage() {
                           borderRadius: "20px",
                         }}
                       >
-                        ðŸ› {selectedStaffProfile.school}
+                        {selectedStaffProfile.school}
                       </span>
                     </div>
                   </div>
@@ -2241,7 +2262,7 @@ export default function DepartmentManagementPage() {
                             fontWeight: 600,
                           }}
                         >
-                          âœ Editing your profile details. Changes will be saved immediately to your account.
+                          Editing your profile details. Changes will be saved immediately to your account.
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
@@ -2369,7 +2390,7 @@ export default function DepartmentManagementPage() {
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                             <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px 14px", border: "1.5px solid #f1f5f9" }}>
                               <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "4px" }}>
-                                âœ‰ Email Address
+                                Email Address
                               </div>
                               <div style={{ fontSize: "13px", fontWeight: 600, color: "#4f46e5", wordBreak: "break-word" }}>
                                 {selectedStaffProfile.email}
@@ -2377,7 +2398,7 @@ export default function DepartmentManagementPage() {
                             </div>
                             <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px 14px", border: "1.5px solid #f1f5f9" }}>
                               <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "4px" }}>
-                                ðŸ“ž Contact Phone
+                                Contact Phone
                               </div>
                               <div style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a" }}>
                                 {selectedStaffProfile.phone}
@@ -2385,7 +2406,7 @@ export default function DepartmentManagementPage() {
                             </div>
                             <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px 14px", border: "1.5px solid #f1f5f9" }}>
                               <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "4px" }}>
-                                ðŸŽ“ Qualification
+                                Qualification
                               </div>
                               <div style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a" }}>
                                 {selectedStaffProfile.qualification}
@@ -2393,7 +2414,7 @@ export default function DepartmentManagementPage() {
                             </div>
                             <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px 14px", border: "1.5px solid #f1f5f9" }}>
                               <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "4px" }}>
-                                â± Experience
+                                Experience
                               </div>
                               <div style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a" }}>
                                 {selectedStaffProfile.experience}
@@ -2428,7 +2449,7 @@ export default function DepartmentManagementPage() {
                               fontSize: "16px",
                             }}
                           >
-                            ðŸ‘¤
+                            <UserCheck size={18} color="#ffffff" />
                           </div>
                           <div>
                             <div style={{ fontSize: "10px", fontWeight: 700, color: "#9333ea", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -2459,6 +2480,9 @@ export default function DepartmentManagementPage() {
                               <span
                                 key={i}
                                 style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
                                   background: "rgba(99,102,241,0.08)",
                                   color: "#4f46e5",
                                   fontSize: "12px",
@@ -2468,7 +2492,8 @@ export default function DepartmentManagementPage() {
                                   border: "1px solid rgba(99,102,241,0.15)",
                                 }}
                               >
-                                ðŸ”¬ {sub}
+                                <BookOpen size={13} color="#4f46e5" />
+                                <span>{sub}</span>
                               </span>
                             ))}
                           </div>
