@@ -563,6 +563,8 @@ export default function DepartmentManagementPage() {
   const [selectedStaffProfile, setSelectedStaffProfile] = useState<MediaStaffItem | null>(null);
   const [editingMediaStaff, setEditingMediaStaff] = useState<MediaStaffItem | null>(null);
   const [editFormData, setEditFormData] = useState<MediaStaffItem | null>(null);
+  const [profileEditMode, setProfileEditMode] = useState(false);
+  const [profileEditDraft, setProfileEditDraft] = useState<any>({});
 
   const handleOpenEditModal = (staff: MediaStaffItem) => {
     setSelectedStaffProfile(null);
@@ -573,8 +575,8 @@ export default function DepartmentManagementPage() {
   const handleSaveEditModal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMediaStaff || !editFormData) return;
-    setMediaStaffList((prev) => {
-      const next = prev.map((s) => (s.id === editFormData.id ? editFormData : s));
+    setMediaStaffList((prev: any) => {
+      const next = prev.map((s: any) => (s.id === editFormData.id ? editFormData : s));
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("rathinam_media_staff_v2", JSON.stringify(next));
@@ -609,8 +611,8 @@ export default function DepartmentManagementPage() {
       ...selectedStaffProfile,
       ...profileEditDraft as any,
     };
-    setMediaStaffList((prev) => {
-      const next = prev.map((s) => (s.id === updated.id ? updated : s));
+    setMediaStaffList((prev: any) => {
+      const next = prev.map((s: any) => (s.id === updated.id ? updated : s));
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("rathinam_media_staff_v2", JSON.stringify(next));
@@ -697,7 +699,7 @@ export default function DepartmentManagementPage() {
 
   const showToast = (message: string, type: "success" | "danger" = "success") => {
     setToast({ message, isOpen: true, type });
-    setTimeout(() => setToast((prev) => ({ ...prev, isOpen: false })), 3000);
+    setTimeout(() => setToast((prev: any) => ({ ...prev, isOpen: false })), 3000);
   };
 
   const saveDepartments = (updated: DepartmentItem[]) => {
@@ -784,12 +786,12 @@ export default function DepartmentManagementPage() {
 
     const assignedSubjects = staffFormSubjects
       .split(",")
-      .map((s) => s.trim())
+      .map((s: any) => s.trim())
       .filter(Boolean);
 
     const assignedSyllabus = staffFormSyllabusNames
       .split(",")
-      .map((s) => s.trim())
+      .map((s: any) => s.trim())
       .filter(Boolean);
 
     const syllabusCount = (typeof staffFormSyllabusCount === "number" && staffFormSyllabusCount > 0)
@@ -829,9 +831,9 @@ export default function DepartmentManagementPage() {
 
     examStore.saveStaffFaculty(staffData);
 
-    setStaffList((prev) => {
+    setStaffList((prev: any) => {
       if (editingStaff) {
-        return prev.map((s) => (s.id === editingStaff.id ? { ...s, ...staffData } : s));
+        return prev.map((s: any) => (s.id === editingStaff.id ? { ...s, ...staffData } : s));
       }
       return [staffData, ...prev];
     });
@@ -859,7 +861,7 @@ export default function DepartmentManagementPage() {
   const handleConfirmDeleteStaff = () => {
     if (!staffToDelete) return;
     examStore.deleteStaffFaculty(staffToDelete.id);
-    setStaffList((prev) => prev.filter((s) => s.id !== staffToDelete.id));
+    setStaffList((prev: any) => prev.filter((s: any) => s.id !== staffToDelete.id));
     showToast(`Staff profile "${staffToDelete.name}" removed successfully.`, "danger");
     setStaffToDelete(null);
   }; // Filter staff by activeDept, search query, and user role
@@ -1497,7 +1499,7 @@ export default function DepartmentManagementPage() {
                             <div
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setShowStaffProfiles((prev) => {
+                                setShowStaffProfiles((prev: any) => {
                                   const opening = !prev;
                                   if (opening) {
                                     setExpandedSchoolId(school.id);
@@ -2294,7 +2296,7 @@ export default function DepartmentManagementPage() {
                             <input
                               type="text"
                               value={profileEditDraft.name || ""}
-                              onChange={(e) => setProfileEditDraft((prev) => ({ ...prev, name: e.target.value }))}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, name: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -2305,7 +2307,7 @@ export default function DepartmentManagementPage() {
                             <input
                               type="text"
                               value={profileEditDraft.designation || ""}
-                              onChange={(e) => setProfileEditDraft((prev) => ({ ...prev, designation: e.target.value }))}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, designation: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -2316,7 +2318,7 @@ export default function DepartmentManagementPage() {
                             <input
                               type="email"
                               value={profileEditDraft.email || ""}
-                              onChange={(e) => setProfileEditDraft((prev) => ({ ...prev, email: e.target.value }))}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, email: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -2327,7 +2329,7 @@ export default function DepartmentManagementPage() {
                             <input
                               type="text"
                               value={profileEditDraft.phone || ""}
-                              onChange={(e) => setProfileEditDraft((prev) => ({ ...prev, phone: e.target.value }))}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, phone: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -2338,7 +2340,7 @@ export default function DepartmentManagementPage() {
                             <input
                               type="text"
                               value={profileEditDraft.qualification || ""}
-                              onChange={(e) => setProfileEditDraft((prev) => ({ ...prev, qualification: e.target.value }))}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, qualification: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -2349,7 +2351,7 @@ export default function DepartmentManagementPage() {
                             <input
                               type="text"
                               value={profileEditDraft.experience || ""}
-                              onChange={(e) => setProfileEditDraft((prev) => ({ ...prev, experience: e.target.value }))}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, experience: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -3125,7 +3127,7 @@ export default function DepartmentManagementPage() {
                       value={staffFormSyllabusNames}
                       onChange={(e) => {
                         setStaffFormSyllabusNames(e.target.value);
-                        const count = e.target.value.split(",").map((s) => s.trim()).filter(Boolean).length;
+                        const count = e.target.value.split(",").map((s: any) => s.trim()).filter(Boolean).length;
                         if (count > 0) setStaffFormSyllabusCount(count);
                       }}
                     />
@@ -3644,7 +3646,7 @@ export default function DepartmentManagementPage() {
           isOpen={toast.isOpen}
           message={toast.message}
           type={toast.type}
-          onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
+          onClose={() => setToast((prev: any) => ({ ...prev, isOpen: false }))}
         />
       </div>
     </RoleGuard>
