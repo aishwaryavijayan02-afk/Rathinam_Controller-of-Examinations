@@ -2208,35 +2208,7 @@ export default function DepartmentManagementPage() {
                               Cancel
                             </button>
                           </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setProfileEditDraft({
-                                ...selectedStaffProfile,
-                                assignedSubjectsInput: selectedStaffProfile?.assignedSubjects ? selectedStaffProfile.assignedSubjects.join(', ') : '',
-                              });
-                              setProfileEditMode(true);
-                            }}
-                            style={{
-                              background: "#ffffff",
-                              color: "#4f46e5",
-                              border: "none",
-                              borderRadius: "10px",
-                              padding: "6px 14px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              fontWeight: 800,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                            }}
-                          >
-                            <Edit3 size={12} color="#4f46e5" />
-                            <span>Edit Profile</span>
-                          </button>
-                        )}
+                        ) : null}
 
                         {/* Close button */}
                         <button
