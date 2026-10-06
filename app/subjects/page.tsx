@@ -595,28 +595,36 @@ export default function DepartmentManagementPage() {
     showToast(`Profile for "${editFormData.name}" updated successfully!`);
   };
 
+  // Only the logged-in staff member can edit their OWN profile
   const isCurrentUserProfile = (staff: { name: string; email?: string; id?: string }) => {
-    if (!currentUser) return true;
-    if (currentUser.role === "COE") return true;
-    const cleanCurrent = (currentUser.name || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
-    const cleanStaff = (staff.name || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
-    if (cleanCurrent && cleanStaff && (cleanCurrent === cleanStaff || cleanCurrent.includes(cleanStaff) || cleanStaff.includes(cleanCurrent))) {
+    if (!currentUser || currentUser.role !== "STAFF") return false;
+    if (currentUser.id && staff.id && currentUser.id === staff.id) {
       return true;
     }
     if (currentUser.email && staff.email && currentUser.email.toLowerCase().trim() === staff.email.toLowerCase().trim()) {
       return true;
     }
-    if (currentUser.id && staff.id && currentUser.id === staff.id) {
-      return true;
-    }
-    if (currentUser.role === "STAFF" && staff.id === "fac-vis-1") {
-      return true;
+    const cleanName = (n: string) =>
+      (n || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").replace(/\s+/g, " ").trim();
+    const cleanCurrent = cleanName(currentUser.name);
+    const cleanStaff = cleanName(staff.name);
+    if (cleanCurrent.length >= 3 && cleanStaff.length >= 3) {
+      if (cleanCurrent === cleanStaff) return true;
+      // Allow first-name logins (e.g. "Vishal" -> "Vishal Mithran")
+      const currentFirst = cleanCurrent.split(" ")[0];
+      const staffFirst = cleanStaff.split(" ")[0];
+      if (currentFirst.length >= 3 && currentFirst === staffFirst) return true;
     }
     return false;
   };
 
   const handleSaveProfile = () => {
     if (!selectedStaffProfile) return;
+    if (!isCurrentUserProfile(selectedStaffProfile)) {
+      setProfileEditMode(false);
+      showToast("You can only edit your own profile.", "danger");
+      return;
+    }
 
     let updatedSubjects = selectedStaffProfile.assignedSubjects;
     if (profileEditDraft.assignedSubjectsInput !== undefined) {
@@ -2000,6 +2008,7 @@ export default function DepartmentManagementPage() {
                           </button>
 
                           {/* EDIT OPTION: ONLY FOR LOGGED IN USER */}
+                          {isMyProfile && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -2040,6 +2049,7 @@ export default function DepartmentManagementPage() {
                               <Edit3 size={13} color="#ffffff" />
                               <span>Edit Profile</span>
                             </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -2148,7 +2158,21 @@ export default function DepartmentManagementPage() {
 
                       {/* Header Actions */}
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        {profileEditMode ? (
+                        {!isCurrentUserProfile(selectedStaffProfile) ? (
+                          <span
+                            style={{
+                              background: "rgba(255, 255, 255, 0.18)",
+                              border: "1px solid rgba(255, 255, 255, 0.3)",
+                              borderRadius: "10px",
+                              color: "#ffffff",
+                              padding: "4px 10px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            View Only
+                          </span>
+                        ) : profileEditMode ? (
                           <div style={{ display: "flex", gap: "6px" }}>
                             <button
                               type="button"
@@ -2285,7 +2309,7 @@ export default function DepartmentManagementPage() {
 
                   {/* Body Content */}
                   <div style={{ padding: "26px 28px 30px" }}>
-                    {profileEditMode ? (
+                    {profileEditMode && isCurrentUserProfile(selectedStaffProfile) ? (
                       /* ===== EDIT FORM MODE ===== */
                       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                         <div
