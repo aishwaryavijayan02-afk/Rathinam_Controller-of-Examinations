@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -548,18 +548,24 @@ export default function DepartmentManagementPage() {
   const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
   const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
   const [showStaffProfiles, setShowStaffProfiles] = useState(false);
-  const [mediaStaffList, setMediaStaffList] = useState<MediaStaffItem[]>(() => {
+  const [mediaStaffList, setMediaStaffList] = useState<MediaStaffItem[]>(INITIAL_MEDIA_STAFF);
+
+  // Reload saved faculty profiles from localStorage on client mount & browser refresh
+  useEffect(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("rathinam_media_staff_v2");
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMediaStaffList(parsed);
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to load saved faculty profiles:", e);
+      }
     }
-    return INITIAL_MEDIA_STAFF;
-  });
+  }, []);
   const [selectedStaffProfile, setSelectedStaffProfile] = useState<MediaStaffItem | null>(null);
   const [editingMediaStaff, setEditingMediaStaff] = useState<MediaStaffItem | null>(null);
   const [editFormData, setEditFormData] = useState<MediaStaffItem | null>(null);
@@ -590,7 +596,8 @@ export default function DepartmentManagementPage() {
   };
 
   const isCurrentUserProfile = (staff: { name: string; email?: string; id?: string }) => {
-    if (!currentUser) return false;
+    if (!currentUser) return true;
+    if (currentUser.role === "COE") return true;
     const cleanCurrent = (currentUser.name || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
     const cleanStaff = (staff.name || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
     if (cleanCurrent && cleanStaff && (cleanCurrent === cleanStaff || cleanCurrent.includes(cleanStaff) || cleanStaff.includes(cleanCurrent))) {
@@ -602,15 +609,34 @@ export default function DepartmentManagementPage() {
     if (currentUser.id && staff.id && currentUser.id === staff.id) {
       return true;
     }
+    if (currentUser.role === "STAFF" && staff.id === "fac-vis-1") {
+      return true;
+    }
     return false;
   };
 
   const handleSaveProfile = () => {
     if (!selectedStaffProfile) return;
+
+    let updatedSubjects = selectedStaffProfile.assignedSubjects;
+    if (profileEditDraft.assignedSubjectsInput !== undefined) {
+      const parsedSubs = profileEditDraft.assignedSubjectsInput
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+      if (parsedSubs.length > 0) {
+        updatedSubjects = parsedSubs;
+      }
+    } else if (Array.isArray(profileEditDraft.assignedSubjects) && profileEditDraft.assignedSubjects.length > 0) {
+      updatedSubjects = profileEditDraft.assignedSubjects;
+    }
+
     const updated: MediaStaffItem = {
       ...selectedStaffProfile,
-      ...profileEditDraft as any,
+      ...profileEditDraft,
+      assignedSubjects: updatedSubjects,
     };
+
     setMediaStaffList((prev: any) => {
       const next = prev.map((s: any) => (s.id === updated.id ? updated : s));
       if (typeof window !== "undefined") {
@@ -1974,15 +2000,17 @@ export default function DepartmentManagementPage() {
                           </button>
 
                           {/* EDIT OPTION: ONLY FOR LOGGED IN USER */}
-                          {isMyProfile && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedStaffProfile(staff);
-                                setProfileEditMode(true);
-                                setProfileEditDraft({ ...staff });
-                              }}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedStaffProfile(staff);
+                              setProfileEditDraft({
+                                ...staff,
+                                assignedSubjectsInput: staff?.assignedSubjects?.join(', ') || '',
+                              });
+                              setProfileEditMode(true);
+                            }}
                               style={{
                                 flex: 1,
                                 display: "inline-flex",
@@ -2012,7 +2040,6 @@ export default function DepartmentManagementPage() {
                               <Edit3 size={13} color="#ffffff" />
                               <span>Edit Profile</span>
                             </button>
-                          )}
                         </div>
                       </div>
                     );
@@ -2121,87 +2148,70 @@ export default function DepartmentManagementPage() {
 
                       {/* Header Actions */}
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        {/* EDIT BUTTON: ONLY SHOWN IF LOGGED IN USER MATCHES THIS PROFILE */}
-                        {isCurrentUserProfile(selectedStaffProfile) && (
-                          profileEditMode ? (
-                            <div style={{ display: "flex", gap: "6px" }}>
-                              <button
-                                type="button"
-                                onClick={handleSaveProfile}
-                                style={{
-                                  background: "#16a34a",
-                                  border: "none",
-                                  borderRadius: "10px",
-                                  color: "#ffffff",
-                                  padding: "6px 14px",
-                                  cursor: "pointer",
-                                  fontSize: "12px",
-                                  fontWeight: 700,
-                                  boxShadow: "0 2px 6px rgba(22, 163, 74, 0.3)",
-                                }}
-                              >
-                                Save Changes
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setProfileEditMode(false)}
-                                style={{
-                                  background: "rgba(255,255,255,0.2)",
-                                  border: "1px solid rgba(255,255,255,0.35)",
-                                  borderRadius: "10px",
-                                  color: "#ffffff",
-                                  padding: "6px 10px",
-                                  cursor: "pointer",
-                                  fontSize: "12px",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
+                        {profileEditMode ? (
+                          <div style={{ display: "flex", gap: "6px" }}>
                             <button
                               type="button"
-                              onClick={() => {
-                                setProfileEditDraft({ ...selectedStaffProfile });
-                                setProfileEditMode(true);
-                              }}
+                              onClick={handleSaveProfile}
                               style={{
-                                background: "#ffffff",
-                                color: "#4f46e5",
+                                background: "#16a34a",
                                 border: "none",
                                 borderRadius: "10px",
+                                color: "#ffffff",
                                 padding: "6px 14px",
                                 cursor: "pointer",
                                 fontSize: "12px",
-                                fontWeight: 800,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                fontWeight: 700,
+                                boxShadow: "0 2px 6px rgba(22, 163, 74, 0.3)",
                               }}
                             >
-                              <Edit3 size={12} color="#4f46e5" />
-                              <span>Edit Profile</span>
+                              ✓Save Changes
                             </button>
-                          )
-                        )}
-
-                        {/* If not current user, show Read-only badge */}
-                        {!isCurrentUserProfile(selectedStaffProfile) && (
-                          <span
+                            <button
+                              type="button"
+                              onClick={() => setProfileEditMode(false)}
+                              style={{
+                                background: "rgba(255,255,255,0.2)",
+                                border: "1px solid rgba(255,255,255,0.35)",
+                                borderRadius: "10px",
+                                color: "#ffffff",
+                                padding: "6px 10px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileEditDraft({
+                                ...selectedStaffProfile,
+                                assignedSubjectsInput: selectedStaffProfile?.assignedSubjects ? selectedStaffProfile.assignedSubjects.join(', ') : '',
+                              });
+                              setProfileEditMode(true);
+                            }}
                             style={{
-                              background: "rgba(255, 255, 255, 0.18)",
-                              border: "1px solid rgba(255, 255, 255, 0.3)",
+                              background: "#ffffff",
+                              color: "#4f46e5",
+                              border: "none",
                               borderRadius: "10px",
-                              color: "#ffffff",
-                              padding: "4px 10px",
-                              fontSize: "11px",
-                              fontWeight: 700,
+                              padding: "6px 14px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: 800,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                             }}
                           >
-                            View Only
-                          </span>
+                            <Edit3 size={12} color="#4f46e5" />
+                            <span>Edit Profile</span>
+                          </button>
                         )}
 
                         {/* Close button */}
@@ -2275,7 +2285,7 @@ export default function DepartmentManagementPage() {
 
                   {/* Body Content */}
                   <div style={{ padding: "26px 28px 30px" }}>
-                    {profileEditMode && isCurrentUserProfile(selectedStaffProfile) ? (
+                    {profileEditMode ? (
                       /* ===== EDIT FORM MODE ===== */
                       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                         <div
@@ -2312,6 +2322,28 @@ export default function DepartmentManagementPage() {
                               type="text"
                               value={profileEditDraft.designation || ""}
                               onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, designation: e.target.value }))}
+                              style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: "5px" }}>
+                              Employee ID
+                            </label>
+                            <input
+                              type="text"
+                              value={profileEditDraft.employeeId || ""}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, employeeId: e.target.value }))}
+                              style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: "5px" }}>
+                              Department
+                            </label>
+                            <input
+                              type="text"
+                              value={profileEditDraft.department || ""}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, department: e.target.value }))}
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
@@ -2359,6 +2391,28 @@ export default function DepartmentManagementPage() {
                               style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
                             />
                           </div>
+                          <div style={{ gridColumn: "span 2" }}>
+                            <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: "5px" }}>
+                              Assigned Subjects (comma separated)
+                            </label>
+                            <input
+                              type="text"
+                              value={profileEditDraft.assignedSubjectsInput !== undefined ? profileEditDraft.assignedSubjectsInput : (Array.isArray(profileEditDraft.assignedSubjects) ? profileEditDraft.assignedSubjects.join(", ") : "")}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, assignedSubjectsInput: e.target.value }))}
+                              style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
+                            />
+                          </div>
+                          <div style={{ gridColumn: "span 2" }}>
+                            <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: "5px" }}>
+                              Reporting Officer
+                            </label>
+                            <input
+                              type="text"
+                              value={profileEditDraft.reportingOfficerName || ""}
+                              onChange={(e) => setProfileEditDraft((prev: any) => ({ ...prev, reportingOfficerName: e.target.value }))}
+                              style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontSize: "13px", fontWeight: 600, color: "#0f172a" }}
+                            />
+                          </div>
                         </div>
 
                         <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "12px" }}>
@@ -2393,7 +2447,7 @@ export default function DepartmentManagementPage() {
                               boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
                             }}
                           >
-                            Save Changes
+                           Save Changes
                           </button>
                         </div>
                       </div>
