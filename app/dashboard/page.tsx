@@ -735,9 +735,9 @@ export default function DashboardPage() {
 
 
         {/* Scrollable Dashboard Body */}
-        <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", overflowX: "hidden", minWidth: 0, width: "100%", boxSizing: "border-box" }}>
+        <main className="digital-vfx-main" style={{ flex: 1, padding: "28px 32px", overflowY: "auto", overflowX: "hidden", minWidth: 0, width: "100%", boxSizing: "border-box" }}>
           {/* Welcome Banner Row */}
-          <div
+          <div className="digital-vfx-welcome"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -772,7 +772,7 @@ export default function DashboardPage() {
 
           
 {/* ================= 2. Central 4-Tier Verification & Approval Flow ================= */}
-          <div
+          <div className="digital-vfx-pipeline"
             style={{
               background: "#ffffff",
               border: "1px solid #e2e8f0",
