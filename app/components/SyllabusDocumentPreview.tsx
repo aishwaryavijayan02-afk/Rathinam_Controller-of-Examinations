@@ -62,7 +62,7 @@ function DocumentLines({ lines, startIndex = 0 }: { lines: string[]; startIndex?
 export default function SyllabusDocumentPreview({ text, fileName, subject, code, semester, department, fileUrl }: SyllabusDocumentPreviewProps) {
   const { overview, units } = splitDocument(text);
   return (
-    <div style={{ flex: 1, overflow: "auto", padding: "28px 20px 48px", background: "linear-gradient(135deg, #e8edf5 0%, #f8fafc 55%, #e9eef8 100%)" }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "28px 20px 48px", background: "linear-gradient(135deg, #e8edf5 0%, #f8fafc 55%, #e9eef8 100%)" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto", background: "#ffffff", border: "1px solid #dbe3ee", borderRadius: "8px", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.12)", overflow: "hidden" }}>
         <div style={{ padding: "30px 38px 24px", borderBottom: "1px solid #dbe3ee", background: "linear-gradient(135deg, #f8fafc, #eef2ff)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "18px" }}>
