@@ -2774,7 +2774,9 @@ export const examStore = {
       ) {
         return false;
       }
-      const documentKey = `${String(item.courseCode || item.courseName || "").trim().toLowerCase()}|${documentName}|${String(item.submittedBy || "").trim().toLowerCase()}`;
+      // One uploaded document should produce one review row even if a stale
+      // browser tab wrote the same record more than once.
+      const documentKey = `${String(item.courseCode || item.courseName || "").trim().toLowerCase()}|${documentName}`;
       if (documentName && seenDocuments.has(documentKey)) {
         return false;
       }

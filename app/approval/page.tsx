@@ -61,6 +61,31 @@ import PortalHeader from "../components/PortalHeader";
 import Pagination from "../components/Pagination";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
 
+function buildHodSyllabusPreview(item: SyllabusApprovalItem, units: SyllabusUnit[]): string {
+  const uploadedText = (item.documentText || "").trim();
+  // Use the staff's extracted document when it contains the actual unit
+  // headings. This keeps HOD's preview identical to the staff preview.
+  if (uploadedText && /^(unit|module|chapter)\b/im.test(uploadedText)) return uploadedText;
+
+  const courseName = item.courseName.trim().toLowerCase();
+  const matchingUnits = units
+    .filter((unit) => unit.subject.trim().toLowerCase() === courseName)
+    .sort((a, b) => Number(a.num) - Number(b.num));
+
+  return [
+    `Syllabus document: ${item.documentName || `${item.courseName}.docx`}`,
+    `Subject: ${item.courseName}`,
+    `Course code: ${item.courseCode}`,
+    `Department: ${item.department}`,
+    `Semester: ${item.semester}`,
+    "",
+    ...matchingUnits.flatMap((unit) => [
+      `UNIT ${unit.num} - ${unit.name}`,
+      ...(unit.subtopics || []).map((topic) => `• ${topic}`),
+    ]),
+  ].join("\n");
+}
+
 export default function ApprovalPage() {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState("approval");
@@ -2117,18 +2142,7 @@ export default function ApprovalPage() {
               <button type="button" onClick={() => setSelectedSyllabus(null)} aria-label="Close document preview" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", border: "none", borderRadius: "9px", background: "#e2e8f0", color: "#475569", cursor: "pointer" }}><X size={17} /></button>
             </div>
             <SyllabusDocumentPreview
-              text={selectedSyllabus.documentText || [
-                `Syllabus document: ${selectedSyllabus.documentName || `${selectedSyllabus.courseName}.docx`}`,
-                `Subject: ${selectedSyllabus.courseName}`,
-                `Course code: ${selectedSyllabus.courseCode}`,
-                `Department: ${selectedSyllabus.department}`,
-                `Semester: ${selectedSyllabus.semester}`,
-                "",
-                ...units
-                  .filter((unit) => unit.subject.trim().toLowerCase() === selectedSyllabus.courseName.trim().toLowerCase())
-                  .sort((a, b) => Number(a.num) - Number(b.num))
-                  .flatMap((unit) => [`UNIT ${unit.num} - ${unit.name}`, ...(unit.subtopics || []).map((topic) => `• ${topic}`)]),
-              ].join("\n")}
+              text={buildHodSyllabusPreview(selectedSyllabus, units)}
               fileName={selectedSyllabus.documentName || `${selectedSyllabus.courseName}.docx`}
               subject={selectedSyllabus.courseName}
               code={selectedSyllabus.courseCode}
