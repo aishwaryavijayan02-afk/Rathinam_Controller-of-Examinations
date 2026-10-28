@@ -461,7 +461,7 @@ export function ViewModal({
                   {/* University Header Banner */}
                   <div style={{ textAlign: "center", borderBottom: "2px double #0f172a", paddingBottom: "16px", marginBottom: "20px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "4px" }}>
-                      <img src="/images/rgu-logo.png" alt="University Logo" style={{ height: "36px", objectFit: "contain" }} />
+                      <img src="/images/rgu-logo.svg" alt="University Logo" style={{ height: "36px", objectFit: "contain" }} />
                     </div>
                     <h2 style={{ margin: "4px 0 2px", fontSize: "17px", fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: "#0f172a" }}>
                       RATHINAM GLOBAL (DEEMED TO BE UNIVERSITY)
@@ -833,6 +833,7 @@ export function FormModal({
   onFieldChange,
 }: FormModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isImageDragOver, setIsImageDragOver] = useState(false);
   const prevIsOpenRef = React.useRef(false);
 
   useEffect(() => {
@@ -870,6 +871,13 @@ export function FormModal({
     e.preventDefault();
     onSubmit(formData);
     onClose();
+  };
+
+  const handleDiagramImage = (fieldKey: string, file?: File) => {
+    if (!file || !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => handleChange(fieldKey, evt.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -1038,6 +1046,14 @@ export function FormModal({
                           </div>
                         ) : (
                           <div
+                            className={`question-bank-dropzone crud-image-dropzone${isImageDragOver ? " is-drag-over" : ""}`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); (event.currentTarget as HTMLElement).click(); } }}
+                            onDragEnter={(event) => { event.preventDefault(); setIsImageDragOver(true); }}
+                            onDragOver={(event) => { event.preventDefault(); setIsImageDragOver(true); }}
+                            onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsImageDragOver(false); }}
+                            onDrop={(event) => { event.preventDefault(); setIsImageDragOver(false); handleDiagramImage(fieldKey, event.dataTransfer.files?.[0]); }}
                             style={{
                               border: "2px dashed #94a3b8",
                               borderRadius: "12px",
@@ -1052,14 +1068,7 @@ export function FormModal({
                               input.type = "file";
                               input.accept = "image/*";
                               input.onchange = (e: any) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (evt) => {
-                                    handleChange(fieldKey, evt.target?.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
+                                handleDiagramImage(fieldKey, e.target.files?.[0]);
                               };
                               input.click();
                             }}

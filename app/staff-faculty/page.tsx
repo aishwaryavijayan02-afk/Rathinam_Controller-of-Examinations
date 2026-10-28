@@ -16,10 +16,10 @@ import {
   Printer,
   Settings,
   Shield,
+  ChevronRight,
   ArrowRight,
   Database,
   Hourglass,
-  ChevronRight,
   Users,
   GraduationCap,
   Briefcase,
@@ -48,7 +48,6 @@ import {
   Lock,
   RefreshCw,
   X,
-  ArrowRightCircle,
   HelpCircle,
 } from "lucide-react";
 import {
@@ -741,7 +740,7 @@ export default function StaffFacultyPage() {
             {/* RGU Logo */}
             <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
               <img
-                src="/images/rgu-logo.png"
+                src="/images/rgu-logo.svg"
                 alt="Rathinam Global University"
                 style={{
                   maxHeight: "38px",

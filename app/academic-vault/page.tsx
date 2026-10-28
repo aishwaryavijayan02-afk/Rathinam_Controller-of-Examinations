@@ -16,8 +16,8 @@ import {
   Settings,
   Printer,
   Shield,
-  ArrowRight,
   ChevronRight,
+  ArrowRight,
   School,
   Trash2,
   UploadCloud,
@@ -155,17 +155,58 @@ function rowsToBulkQuestions(rows: string[][], sourceFile: string): ParsedBulkQu
     .filter((question): question is ParsedBulkQuestion => Boolean(question));
 }
 
+function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQuestion[] {
+  const lines = text.split(/\r?\n/).map((line) => cleanCell(line)).filter(Boolean);
+  const numberedQuestion = /^(?:(?:question|q)\s*)?\d+\s*[.)\-:]\s*(.+)$/i;
+  const optionLine = /^(?:\(?([A-D])\)?\s*[.)\-:]|\(([A-D])\))\s*(.+)$/i;
+  const answerLine = /^(?:correct\s+)?answer\s*[:\-]\s*(.+)$/i;
+  const questions: ParsedBulkQuestion[] = [];
+  let current: ParsedBulkQuestion | null = null;
+  let foundNumberedQuestions = false;
+
+  const finish = () => {
+    if (current?.question.trim()) questions.push(current);
+    current = null;
+  };
+
+  for (const line of lines) {
+    const questionMatch = line.match(numberedQuestion);
+    if (questionMatch) {
+      foundNumberedQuestions = true;
+      finish();
+      current = { question: questionMatch[1].trim(), options: [], sourceFile, unit: "1", topic: "General", type: "Descriptive", difficulty: "Medium", marks: 2 };
+      continue;
+    }
+
+    const optionMatch = line.match(optionLine);
+    const answerMatch = line.match(answerLine);
+    if (optionMatch && current) {
+      current.options = [...(current.options || []), optionMatch[3].trim()];
+      current.type = "MCQ";
+    } else if (answerMatch && current) {
+      current.correctAnswer = answerMatch[1].trim();
+    } else if (current) {
+      current.question = `${current.question}\n${line}`;
+    } else if (!foundNumberedQuestions && !optionMatch && !answerMatch && line.length >= 5) {
+      current = { question: line, sourceFile, unit: "1", topic: "General", type: "Descriptive", difficulty: "Medium", marks: 2 };
+      finish();
+    }
+  }
+  finish();
+  return questions;
+}
+
 async function parseBulkQuestionFile(file: File): Promise<ParsedBulkQuestion[]> {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
   if (extension === "csv") return rowsToBulkQuestions(parseCsvRows(await file.text()), file.name);
   if (extension === "xlsx" || extension === "xls") return rowsToBulkQuestions(await parseXlsxRows(await file.arrayBuffer()), file.name);
   if (extension === "docx" || extension === "doc") {
     const text = extension === "docx" ? await extractDocxText(await file.arrayBuffer()) : await file.text();
-    return text.split(/\r?\n/).map((line) => cleanCell(line).replace(/^(?:question\s*)?\d+\s*[.)\-:]\s*/i, "")).filter((question) => question.length >= 5).map((question) => ({ question, sourceFile: file.name, unit: "1", topic: "General", type: "Descriptive", difficulty: "Medium", marks: 2 }));
+    return parseTextQuestionBank(text, file.name);
   }
   if (extension === "pdf") {
     const text = await extractFileText(file);
-    return text.split(/\r?\n/).map((line) => cleanCell(line).replace(/^(?:question\s*)?\d+\s*[.)\-:]\s*/i, "")).filter((question) => question.length >= 5).map((question) => ({ question, sourceFile: file.name, unit: "1", topic: "General", type: "Descriptive", difficulty: "Medium", marks: 2 }));
+    return parseTextQuestionBank(text, file.name);
   }
   if (["png", "jpg", "jpeg", "svg", "webp"].includes(extension)) {
     return [{ question: `Diagram attachment: ${file.name}`, sourceFile: file.name, unit: "1", topic: "Diagram", type: "Descriptive", difficulty: "Medium", marks: 2 }];
@@ -310,12 +351,11 @@ export default function AcademicVaultPage() {
   const [syllabusPreviewText, setSyllabusPreviewText] = useState<string | null>(null);
   const [savedSyllabus, setSavedSyllabus] = useState<{ name: string; code: string } | null>(null);
   const [showSyllabusFilePreview, setShowSyllabusFilePreview] = useState(false);
+  const [isSyllabusDragOver, setIsSyllabusDragOver] = useState(false);
   const [syllabusFormat, setSyllabusFormat] = useState<SyllabusUploadFormat>("pdf");
   const syllabusFileRef = useRef<HTMLInputElement>(null);
 
-  const handleSyllabusFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processSyllabusFile = async (file: File) => {
     const extension = file.name.split(".").pop()?.toLowerCase() || "";
     const allowedExtensions: Record<SyllabusUploadFormat, string[]> = {
       excel: ["xlsx", "xls"],
@@ -326,7 +366,6 @@ export default function AcademicVaultPage() {
     if (!allowedExtensions[syllabusFormat].includes(extension)) {
       const formatName = syllabusFormat === "excel" ? "Excel" : syllabusFormat === "word" ? "Word" : syllabusFormat === "pdf" ? "PDF" : "Diagram image";
       showToast(`Please choose a ${formatName} file.`, "danger");
-      e.target.value = "";
       return;
     }
     setSyllabusFile(file);
@@ -349,6 +388,11 @@ export default function AcademicVaultPage() {
       setSyllabusDepartment("General Studies");
     }
     showToast("Uploaded successfully.");
+  };
+
+  const handleSyllabusFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await processSyllabusFile(file);
   };
 
   const handleDeleteSyllabusUpload = () => {
@@ -504,13 +548,16 @@ export default function AcademicVaultPage() {
   // ---------------- PARTITION 2: QUESTION BANK STATE ----------------
   const [bulkFileName, setBulkFileName] = useState<string | null>(null);
   const [bulkFileUrl, setBulkFileUrl] = useState<string | null>(null);
+  const [bulkSourceText, setBulkSourceText] = useState<string | null>(null);
   const [bulkFormat, setBulkFormat] = useState<SyllabusUploadFormat>("excel");
   const [bulkSubject, setBulkSubject] = useState(subjects[0]?.name || "General");
   const bulkFileRef = useRef<HTMLInputElement>(null);
   const [parsedBulkCount, setParsedBulkCount] = useState(0);
   const [parsedBulkQuestions, setParsedBulkQuestions] = useState<ParsedBulkQuestion[]>([]);
   const [isParsingBulk, setIsParsingBulk] = useState(false);
+  const [isBulkDragOver, setIsBulkDragOver] = useState(false);
   const [showBulkPreview, setShowBulkPreview] = useState(false);
+  const [bulkPreviewTab, setBulkPreviewTab] = useState<"document" | "questions">("document");
 
   useEffect(() => {
     if (availableSubjects.length > 0 && !availableSubjects.some((subject) => subject.name === bulkSubject)) {
@@ -533,9 +580,7 @@ export default function AcademicVaultPage() {
   const [manualOptionD, setManualOptionD] = useState("");
   const [manualCorrectAnswer, setManualCorrectAnswer] = useState("A");
 
-  const handleBulkFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processBulkFile = async (file: File) => {
     const extension = file.name.split(".").pop()?.toLowerCase() || "";
     const allowedExtensions: Record<SyllabusUploadFormat, string[]> = {
       excel: ["xlsx", "xls"],
@@ -546,15 +591,20 @@ export default function AcademicVaultPage() {
     if (!allowedExtensions[bulkFormat].includes(extension)) {
       const formatName = bulkFormat === "excel" ? "Excel" : bulkFormat === "word" ? "Word" : bulkFormat === "pdf" ? "PDF" : "Diagram image";
       showToast(`Please choose a ${formatName} file.`, "danger");
-      e.target.value = "";
       return;
     }
     setBulkFileName(file.name);
     setBulkFileUrl(URL.createObjectURL(file));
+    setBulkSourceText(null);
     setParsedBulkQuestions([]);
     setParsedBulkCount(0);
     setIsParsingBulk(true);
     try {
+      if (extension === "docx") {
+        setBulkSourceText(await extractDocxText(await file.arrayBuffer()));
+      } else if (extension === "doc") {
+        setBulkSourceText("Previewing legacy .doc files is not supported in the browser. Convert the document to .docx to preview its contents here.");
+      }
       const parsed = await parseBulkQuestionFile(file);
       setParsedBulkQuestions(parsed);
       setParsedBulkCount(parsed.length);
@@ -567,10 +617,16 @@ export default function AcademicVaultPage() {
       console.error("Bulk question parsing failed", error);
       setBulkFileName(null);
       setBulkFileUrl(null);
+      setBulkSourceText(null);
       showToast(`Unable to read ${file.name}. Please upload a valid .xlsx file.`, "danger");
     } finally {
       setIsParsingBulk(false);
     }
+  };
+
+  const handleBulkFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await processBulkFile(file);
   };
 
   const handleCommitBulkImport = () => {
@@ -621,6 +677,7 @@ export default function AcademicVaultPage() {
 
     setBulkFileName(null);
     setBulkFileUrl(null);
+    setBulkSourceText(null);
     setParsedBulkCount(0);
     setParsedBulkQuestions([]);
     setShowBulkPreview(false);
@@ -719,7 +776,7 @@ export default function AcademicVaultPage() {
             {/* RGU Logo with 3D ambient glow */}
             <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
               <img
-                src="/images/rgu-logo.png"
+                src="/images/rgu-logo.svg"
                 alt="Rathinam Global (Deemed to be University)"
                 style={{
                   maxHeight: "38px",
@@ -880,7 +937,7 @@ export default function AcademicVaultPage() {
                     border: "1px solid #ddd6fe",
                   }}
                 >
-                  📚 {subjects.length} Syllabi
+                  📚 {subjects.length} {subjects.length === 1 ? "Syllabus" : "Syllabi"}
                 </span>
                 <span
                   style={{
@@ -974,7 +1031,15 @@ export default function AcademicVaultPage() {
 
                   {/* Compact File Dropzone */}
                   <div
+                    className={`question-bank-dropzone${isSyllabusDragOver ? " is-drag-over" : ""}`}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => syllabusFileRef.current?.click()}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); syllabusFileRef.current?.click(); } }}
+                    onDragEnter={(event) => { event.preventDefault(); setIsSyllabusDragOver(true); }}
+                    onDragOver={(event) => { event.preventDefault(); setIsSyllabusDragOver(true); }}
+                    onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsSyllabusDragOver(false); }}
+                    onDrop={(event) => { event.preventDefault(); setIsSyllabusDragOver(false); const file = event.dataTransfer.files?.[0]; if (file) void processSyllabusFile(file); }}
                     style={{
                       border: "2px dashed #c7d2fe",
                       borderRadius: "12px",
@@ -1000,7 +1065,7 @@ export default function AcademicVaultPage() {
                       accept={syllabusFormat === "excel" ? ".xlsx,.xls" : syllabusFormat === "word" ? ".docx,.doc" : syllabusFormat === "pdf" ? ".pdf" : ".png,.jpg,.jpeg,.svg,.webp"}
                       style={{ display: "none" }}
                     />
-                    <UploadCloud size={24} color="#6366f1" />
+                    <div className="question-bank-file-orb syllabus-file-orb"><UploadCloud size={24} color="#0284c7" className="question-bank-file-glyph" /></div>
                     <div style={{ fontSize: "13px", fontWeight: 800, color: syllabusFileName ? "#15803d" : "#334155" }}>
                       {syllabusFileName ? "Uploaded" : `Click or Drag & Drop ${syllabusFormat === "excel" ? "Excel" : syllabusFormat === "word" ? "Word" : syllabusFormat === "pdf" ? "PDF" : "Diagram"} file`}
                     </div>
@@ -1297,6 +1362,7 @@ export default function AcademicVaultPage() {
                               setBulkFormat(value);
                               setBulkFileName(null);
                               setBulkFileUrl(null);
+                              setBulkSourceText(null);
                               setParsedBulkQuestions([]);
                               setParsedBulkCount(0);
                               if (bulkFileRef.current) bulkFileRef.current.value = "";
@@ -1317,7 +1383,15 @@ export default function AcademicVaultPage() {
                         ))}
                       </div>
                       <div
+                        className={`question-bank-dropzone${isBulkDragOver ? " is-drag-over" : ""}`}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => bulkFileRef.current?.click()}
+                        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); bulkFileRef.current?.click(); } }}
+                        onDragEnter={(event) => { event.preventDefault(); setIsBulkDragOver(true); }}
+                        onDragOver={(event) => { event.preventDefault(); setIsBulkDragOver(true); }}
+                        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsBulkDragOver(false); }}
+                        onDrop={(event) => { event.preventDefault(); setIsBulkDragOver(false); const file = event.dataTransfer.files?.[0]; if (file) void processBulkFile(file); }}
                         style={{
                           border: "2px dashed #38bdf8",
                           borderRadius: "12px",
@@ -1350,7 +1424,7 @@ export default function AcademicVaultPage() {
                           }
                           style={{ display: "none" }}
                         />
-                        <div
+                        <div className="question-bank-file-orb"
                           style={{
                             width: "48px",
                             height: "48px",
@@ -1362,7 +1436,7 @@ export default function AcademicVaultPage() {
                             marginBottom: "2px",
                           }}
                         >
-                          <FileSpreadsheet size={26} color="#0284c7" />
+                          <FileSpreadsheet size={26} color="#0284c7" className="question-bank-file-glyph" />
                         </div>
                         <div style={{ fontSize: "14px", fontWeight: 800, color: bulkFileName ? "#15803d" : "#0369a1" }}>
                           {bulkFileName
@@ -1373,7 +1447,7 @@ export default function AcademicVaultPage() {
                           Upload one {bulkFormat === "excel" ? "Excel (.xlsx/.xls)" : bulkFormat === "word" ? "Word (.docx/.doc)" : bulkFormat === "pdf" ? "PDF (.pdf)" : "Diagram (.png/.jpg/.jpeg/.svg/.webp)"} question bank file. All questions will be previewed together before saving.
                         </div>
                         {isParsingBulk && <div style={{ fontSize: "12px", fontWeight: 700, color: "#0369a1" }}>Reading every question from the file...</div>}
-                        {!isParsingBulk && parsedBulkCount > 0 && (
+                        {!isParsingBulk && (parsedBulkCount > 0 || bulkSourceText !== null) && (
                           <div style={{ fontSize: "12px", fontWeight: 800, color: "#15803d" }}>
                             ✓ {parsedBulkCount} questions found and ready to insert
                           </div>
@@ -1383,6 +1457,7 @@ export default function AcademicVaultPage() {
                             type="button"
                             onClick={(event) => {
                               event.stopPropagation();
+                              setBulkPreviewTab(bulkSourceText !== null ? "document" : "questions");
                               setShowBulkPreview(true);
                             }}
                             style={{
@@ -1405,15 +1480,15 @@ export default function AcademicVaultPage() {
                         )}
                       </div>
 
-                      {bulkFileName && bulkFileUrl && (
+                      {bulkFileName && bulkFileUrl && !isParsingBulk && (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "9px 11px", borderRadius: "8px", background: "#f0f9ff", border: "1px solid #bae6fd" }}>
                           <div style={{ minWidth: 0, fontSize: "11.5px", color: "#0369a1", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📊 {bulkFileName}</div>
                           <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                            <button type="button" onClick={() => setShowBulkPreview(true)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #7dd3fc", background: "#ffffff", color: "#0369a1", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
+                            <button type="button" onClick={() => { setBulkPreviewTab(bulkSourceText !== null ? "document" : "questions"); setShowBulkPreview(true); }} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #7dd3fc", background: "#ffffff", color: "#0369a1", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
                               <Eye size={13} /> View Questions
                             </button>
                             {!isParsingBulk && parsedBulkCount > 0 && (
-                              <button type="button" onClick={() => setShowBulkPreview(true)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #86efac", background: "#ffffff", color: "#15803d", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
+                              <button type="button" onClick={() => { setBulkPreviewTab("questions"); setShowBulkPreview(true); }} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #86efac", background: "#ffffff", color: "#15803d", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
                                 <Eye size={13} /> Preview Questions
                               </button>
                             )}
@@ -1617,7 +1692,7 @@ export default function AcademicVaultPage() {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid #e2e8f0" }}>
               <div>
-                <div style={{ fontSize: "18px", fontWeight: 850, color: "#0f172a" }}>Question Bank Preview</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}><span style={{ width: "38px", height: "38px", borderRadius: "11px", display: "grid", placeItems: "center", color: "#0e7490", background: "linear-gradient(145deg, #cffafe, #e0f2fe)" }}><FileText size={19} /></span><span style={{ fontSize: "18px", fontWeight: 850, color: "#0f172a" }}>Question Bank Preview</span></div>
                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>{bulkFileName} · {parsedBulkCount} questions</div>
               </div>
               <button type="button" onClick={() => setShowBulkPreview(false)} aria-label="Close preview" style={{ border: "none", background: "#f1f5f9", color: "#475569", borderRadius: "8px", width: "34px", height: "34px", cursor: "pointer", display: "grid", placeItems: "center" }}>
@@ -1625,7 +1700,44 @@ export default function AcademicVaultPage() {
               </button>
             </div>
             <div style={{ overflow: "auto", padding: "20px 22px 24px" }}>
-              <div style={{ marginBottom: "14px", padding: "12px 14px", borderRadius: "10px", border: "1px solid #dbeafe", background: "#ffffff", color: "#475569", fontSize: "12px" }}>Review all imported questions below before saving them to the Question Bank.</div>
+              <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Review the uploaded file or inspect the questions that will be added to the bank.</div>
+              <div role="tablist" aria-label="Question bank preview mode" style={{ display: "flex", gap: "6px", padding: "5px", marginBottom: "16px", width: "fit-content", borderRadius: "11px", background: "#e9eef5", border: "1px solid #dbe3ee" }}>
+                {bulkSourceText !== null && <button type="button" role="tab" aria-selected={bulkPreviewTab === "document"} onClick={() => setBulkPreviewTab("document")} style={{ border: "none", borderRadius: "8px", padding: "9px 14px", color: bulkPreviewTab === "document" ? "#0f172a" : "#64748b", background: bulkPreviewTab === "document" ? "#ffffff" : "transparent", boxShadow: bulkPreviewTab === "document" ? "0 1px 3px rgba(15,23,42,.12)" : "none", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>Original document</button>}
+                <button type="button" role="tab" aria-selected={bulkPreviewTab === "questions"} onClick={() => setBulkPreviewTab("questions")} style={{ border: "none", borderRadius: "8px", padding: "9px 14px", color: bulkPreviewTab === "questions" ? "#0f172a" : "#64748b", background: bulkPreviewTab === "questions" ? "#ffffff" : "transparent", boxShadow: bulkPreviewTab === "questions" ? "0 1px 3px rgba(15,23,42,.12)" : "none", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>Parsed questions <span style={{ marginLeft: "5px", color: "#0e7490" }}>{parsedBulkCount}</span></button>
+              </div>
+              {bulkPreviewTab === "document" && bulkSourceText !== null && (
+                <section style={{ border: "1px solid #d8e1ec", borderRadius: "13px", background: "#e9eef5", overflow: "hidden", padding: "18px" }}>
+                  <div style={{ maxWidth: "900px", margin: "0 auto", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#ffffff", boxShadow: "0 8px 24px rgba(15,23,42,.08)", overflow: "hidden" }}>
+                    <div style={{ padding: "14px 24px", borderBottom: "1px solid #edf1f5", display: "flex", justifyContent: "space-between", gap: "12px", color: "#64748b", fontSize: "11px", fontWeight: 700 }}><span>DOCUMENT TEXT PREVIEW</span><span>{bulkFileName}</span></div>
+                    <div style={{ padding: "24px clamp(18px, 5vw, 52px) 36px", maxHeight: "58vh", overflow: "auto", color: "#1e293b" }}>
+                      {(bulkSourceText || "No readable text was found in this Word document.").split(/\r?\n/).filter((line) => line.trim()).map((line, lineIndex) => {
+                        const value = line.trim();
+                        const isUnit = /^unit\s+[ivx\d]+/i.test(value);
+                        const isSection = /^section\b/i.test(value);
+                        const isQuestion = /^\d+[.)]\s/.test(value);
+                        const isOption = /^[A-D][.)]\s/i.test(value);
+                        const isTitle = lineIndex === 0;
+                        const isSummary = /^(total:|distribution:|each of the)/i.test(value);
+                        return <div key={`${lineIndex}-${value}`} style={{
+                          marginTop: isTitle ? 0 : isUnit ? 26 : isSection ? 16 : isQuestion ? 18 : isOption ? 6 : isSummary ? 10 : 9,
+                          padding: isTitle ? "0 0 8px" : isUnit ? "12px 14px" : isSection ? "2px 0 6px" : isQuestion ? "12px 14px" : isSummary ? "9px 12px" : isOption ? "0 0 0 22px" : "0",
+                          borderLeft: isUnit ? "3px solid #0f8b8d" : isQuestion ? "3px solid #cbd5e1" : "none",
+                          borderRadius: isUnit ? "0 9px 9px 0" : isQuestion ? "0 9px 9px 0" : 0,
+                          background: isUnit ? "linear-gradient(90deg, #ecfeff, #f8fafc)" : isQuestion ? "#f8fafc" : isSummary ? "#f8fafc" : "transparent",
+                          color: isUnit ? "#0f4c5c" : isSection ? "#0e7490" : isOption ? "#526174" : isSummary ? "#526174" : "#1e293b",
+                          fontSize: isTitle ? "21px" : isUnit ? "15px" : isSection ? "13px" : isQuestion ? "14px" : "13px",
+                          fontWeight: isTitle || isUnit || isSection || isQuestion ? 750 : isSummary ? 600 : 450,
+                          lineHeight: 1.65,
+                          letterSpacing: isTitle ? "-0.02em" : isSection ? "0.02em" : undefined,
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "anywhere",
+                        }}>{value}</div>;
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
+              {bulkPreviewTab === "questions" && (
               <div style={{ overflow: "hidden", border: "1px solid #dbe3ee", borderRadius: "12px", background: "#ffffff" }}>
               <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: "12px" }}>
                 <thead>
@@ -1642,7 +1754,11 @@ export default function AcademicVaultPage() {
                   {parsedBulkQuestions.map((item, index) => (
                     <tr key={`${item.question}-${index}`} style={{ borderBottom: "1px solid #e2e8f0", background: index % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
                       <td style={{ padding: "13px 14px", color: "#64748b", verticalAlign: "top", fontWeight: 800 }}>{String(index + 1).padStart(2, "0")}</td>
-                      <td style={{ padding: "13px 14px", color: "#0f172a", fontWeight: 650, lineHeight: 1.6 }}>{item.question}</td>
+                      <td style={{ padding: "13px 14px", color: "#0f172a", fontWeight: 650, lineHeight: 1.6 }}>
+                        <div style={{ whiteSpace: "pre-wrap" }}>{item.question}</div>
+                        {item.options?.length ? <div style={{ marginTop: "8px", display: "grid", gap: "4px", color: "#475569", fontWeight: 500 }}>{item.options.map((option, optionIndex) => <div key={`${index}-option-${optionIndex}`}>{String.fromCharCode(65 + optionIndex)}. {option}</div>)}</div> : null}
+                        {item.correctAnswer ? <div style={{ marginTop: "7px", color: "#15803d", fontSize: "11px", fontWeight: 750 }}>Answer: {item.correctAnswer}</div> : null}
+                      </td>
                       <td style={{ padding: "13px 14px", color: "#475569", verticalAlign: "top" }}><span style={{ padding: "4px 8px", borderRadius: "6px", background: "#f1f5f9", fontWeight: 700 }}>{item.unit || "1"}</span></td>
                       <td style={{ padding: "13px 14px", color: "#475569", verticalAlign: "top" }}>{item.topic || "General"}</td>
                       <td style={{ padding: "13px 14px", color: "#475569", verticalAlign: "top" }}><span style={{ padding: "4px 8px", borderRadius: "6px", background: "#eef2ff", color: "#4338ca", fontWeight: 700 }}>{item.type || "Descriptive"}</span></td>
@@ -1652,6 +1768,7 @@ export default function AcademicVaultPage() {
                 </tbody>
               </table>
               </div>
+              )}
             </div>
           </div>
         </div>

@@ -16,8 +16,8 @@ import {
   Settings,
   Printer,
   Shield,
-  ArrowRight,
   ChevronRight,
+  ArrowRight,
   School,
   Clock,
   XCircle,
@@ -390,7 +390,7 @@ export default function NotificationsApprovalPage() {
           <div>
             <div style={{ padding: "6px 10px 24px 10px" }}>
               <img
-                src="/images/rgu-logo.png"
+                src="/images/rgu-logo.svg"
                 alt="Rathinam Global (Deemed to be University)"
                 style={{
                   maxHeight: "38px",

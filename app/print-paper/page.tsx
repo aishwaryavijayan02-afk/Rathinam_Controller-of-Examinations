@@ -17,7 +17,6 @@ import {
   Printer,
   Shield,
   ArrowRight,
-  ChevronRight,
   School,
   Sparkles,
   Sliders,
@@ -302,7 +301,7 @@ export default function PrintPaperPage() {
           <div>
             <div style={{ padding: "6px 10px 24px 10px" }}>
               <img
-                src="/images/rgu-logo.png"
+                src="/images/rgu-logo.svg"
                 alt="Rathinam Global (Deemed to be University)"
                 style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
               />

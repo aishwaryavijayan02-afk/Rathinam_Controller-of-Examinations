@@ -21,8 +21,6 @@ import {
   ArrowRight,
   School,
   ChevronDown,
-  ChevronRight,
-  ChevronLeft,
   Plus,
   Building2,
   X,
@@ -1092,7 +1090,7 @@ export default function DepartmentManagementPage() {
             {/* RGU Logo */}
             <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
               <img
-                src="/images/rgu-logo.png"
+                src="/images/rgu-logo.svg"
                 alt="Rathinam Global (Deemed to be University)"
                 style={{
                   maxHeight: "38px",
@@ -1241,7 +1239,7 @@ export default function DepartmentManagementPage() {
                   }}
                 >
                   <img
-                    src="/images/rgu-logo.png"
+                    src="/images/rgu-logo.svg"
                     alt="RGU Logo"
                     style={{
                       height: "34px",

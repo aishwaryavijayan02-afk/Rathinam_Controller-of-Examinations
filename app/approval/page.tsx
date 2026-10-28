@@ -18,8 +18,8 @@ import {
   Settings,
   Printer,
   Shield,
-  ArrowRight,
   ChevronRight,
+  ArrowRight,
   ChevronDown,
   Headphones,
   Info,
@@ -166,11 +166,11 @@ export default function ApprovalPage() {
 
   const handleOpenSubjectModal = (subjName: string) => {
     const cleanSubj = subjName.replace(/\s*\(All\)/i, "").trim();
-    const subjQuestions = questions.filter((q) => {
-      if (currentUser.role === "HOD" && q.status !== "Pending") return false;
-      if (currentUser.role === "DEAN" && q.status !== "Verified") return false;
+    // The inspection view should always show the full subject pack. Filter by
+    // approval stage only when deciding whether the bulk-approval action is available.
+    const subjQuestions = examStore.getQuestions().filter((q) => {
       const qSubj = (q.subject || "").trim();
-      return (
+      return Boolean(qSubj) && (
         qSubj.toLowerCase().includes(cleanSubj.toLowerCase()) ||
         cleanSubj.toLowerCase().includes(qSubj.toLowerCase())
       );
@@ -184,8 +184,19 @@ export default function ApprovalPage() {
   };
 
   const handleApproveSubjectFromModal = () => {
-    const ids = subjectModalData.questions.map((q) => q.id);
-    if (ids.length === 0) return;
+    const ids = subjectModalData.questions
+      .filter((q) => {
+        const verifiedRole = (q.verifiedRole || "").toUpperCase();
+        if (currentUser.role === "HOD") return q.status === "Pending";
+        if (currentUser.role === "DEAN") return q.status === "Verified" || (q.status === "Approved" && verifiedRole === "HOD");
+        if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN";
+        return q.status === "Verified";
+      })
+      .map((q) => q.id);
+    if (ids.length === 0) {
+      triggerToast(`No questions are currently waiting for ${currentUser.role === "DEAN" ? "Dean" : currentUser.role === "COE" ? "COE" : "HOD"} approval.`, "info");
+      return;
+    }
 
     if (currentUser.role === "HOD") {
       examStore.hodVerifyQuestions(ids, currentUser.name);
@@ -288,6 +299,14 @@ export default function ApprovalPage() {
 
   // Auth User State
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
+
+  const canApproveSubjectQuestions = subjectModalData.questions.some((q) => {
+    const verifiedRole = (q.verifiedRole || "").toUpperCase();
+    if (currentUser.role === "HOD") return q.status === "Pending";
+    if (currentUser.role === "DEAN") return q.status === "Verified" || (q.status === "Approved" && verifiedRole === "HOD");
+    if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN";
+    return q.status === "Verified";
+  });
 
   const handleApproveSyllabus = () => {
     if (!selectedSyllabus) return;
@@ -667,7 +686,7 @@ export default function ApprovalPage() {
           {/* RGU Logo */}
           <div style={{ padding: "6px 10px 24px 10px" }}>
             <img
-              src="/images/rgu-logo.png"
+              src="/images/rgu-logo.svg"
               alt="Rathinam Global (Deemed to be University)"
               style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
             />
@@ -1106,14 +1125,14 @@ export default function ApprovalPage() {
                 <div style={{ fontSize: "13.5px", fontWeight: 800, color: "#1e3a8a", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <BookOpen size={16} color="#2563eb" />
-                    <span>Subject Question Inspection Packs</span>
+                    <span>Subject-wise question approval</span>
                   </div>
                   <span style={{ fontSize: "11px", fontWeight: 700, color: "#2563eb", background: "#ffffff", padding: "3px 10px", borderRadius: "20px", border: "1px solid #bfdbfe" }}>
                     Click 👁️ to read full questions & approve
                   </span>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+                <div className="approval-packs-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
                   {/* Main Subject Pack */}
                   {Array.from(new Set(questions.map((q) => q.subject || "Viscom & VFX"))).map((subjName) => {
                     const subjQuestions = questions.filter((q) => {
@@ -1121,10 +1140,23 @@ export default function ApprovalPage() {
                       const targetSubj = subjName.trim().toLowerCase();
                       return qSubj.includes(targetSubj) || targetSubj.includes(qSubj);
                     });
+                    const total = subjQuestions.length;
+                    const hodDone = subjQuestions.filter((q) => q.status === "Verified" || (q.status === "Approved" && ["DEAN", "COE"].includes((q.verifiedRole || "").toUpperCase()))).length;
+                    const deanDone = subjQuestions.filter((q) => q.status === "Approved").length;
+                    const coeDone = subjQuestions.filter((q) => q.status === "Approved" && (q.verifiedRole || "").toUpperCase() === "COE").length;
+                    const activeStage = hodDone < total ? 1 : deanDone < total ? 2 : coeDone < total ? 3 : 4;
+                    const waitingLabel = activeStage === 1 ? "Waiting for HOD" : activeStage === 2 ? "Waiting for Dean" : activeStage === 3 ? "Waiting for COE" : "All approvals complete";
+                    const stages = [
+                      { label: "Staff submitted", count: total },
+                      { label: "HOD review", count: hodDone },
+                      { label: "Dean approval", count: deanDone },
+                      { label: "COE sign-off", count: coeDone },
+                    ];
 
                     return (
                       <div
                         key={subjName}
+                        className="approval-pack-card"
                         style={{
                           background: "linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)",
                           border: "1.5px solid #93c5fd",
@@ -1132,9 +1164,9 @@ export default function ApprovalPage() {
                           padding: "12px 14px",
                           boxShadow: "0 2px 8px rgba(37, 99, 235, 0.08)",
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "10px",
+                          flexDirection: "column",
+                          alignItems: "stretch",
+                          gap: "12px",
                         }}
                       >
                         <div>
@@ -1142,10 +1174,11 @@ export default function ApprovalPage() {
                             📚 {subjName} (All)
                           </strong>
                           <span style={{ fontSize: "11px", color: "#2563eb", fontWeight: 600 }}>
-                            {subjQuestions.length} Question(s)
+                            {subjQuestions.length} {subjQuestions.length === 1 ? "question" : "questions"}
                           </span>
                         </div>
 
+                        <span className={`approval-waiting-badge${activeStage === 4 ? " is-complete" : ""}`}><span className="approval-status-dot" />{waitingLabel}</span>
                         <button
                           type="button"
                           onClick={() => handleOpenSubjectModal(subjName)}
@@ -1156,19 +1189,31 @@ export default function ApprovalPage() {
                             gap: "6px",
                             padding: "7px 12px",
                             borderRadius: "8px",
-                            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                            background: "linear-gradient(135deg, #147d78 0%, #0e6965 100%)",
                             color: "#ffffff",
                             border: "none",
                             fontSize: "12px",
                             fontWeight: 700,
                             cursor: "pointer",
-                            boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
+                            boxShadow: "0 4px 12px rgba(15, 118, 110, 0.2)",
                             flexShrink: 0,
                           }}
                         >
                           <Eye size={14} />
-                          <span>View All</span>
+                          <span>View questions</span>
                         </button>
+                        <div className="approval-stage-track" aria-label={`${waitingLabel}; approval progress`}>
+                          {stages.map((stage, stageIndex) => {
+                            const isDone = stage.count >= total && total > 0;
+                            const isWaiting = stageIndex === activeStage;
+                            const percent = total > 0 ? Math.round((stage.count / total) * 100) : 0;
+                            return <div className={`approval-stage-card${isDone ? " is-done" : ""}${isWaiting ? " is-waiting" : ""}`} key={stage.label}>
+                              <div className="approval-stage-heading"><span className="approval-stage-marker">{isDone ? "✓" : String(stageIndex + 1).padStart(2, "0")}</span><span>{stage.label}</span></div>
+                              <div className="approval-stage-count">{stage.count} / {total} complete</div>
+                              <div className="approval-stage-progress"><span style={{ width: `${percent}%` }} /></div>
+                            </div>;
+                          })}
+                        </div>
                       </div>
                     );
                   })}
@@ -2248,7 +2293,7 @@ export default function ApprovalPage() {
         badge={`${subjectModalData.questions.length} Questions`}
         badgeColor="blue"
         questionsList={subjectModalData.questions}
-        onVerify={handleApproveSubjectFromModal}
+        onVerify={canApproveSubjectQuestions ? handleApproveSubjectFromModal : undefined}
         verifyLabel={
           currentUser.role === "HOD"
             ? "✓ Verify & Send to Dean"

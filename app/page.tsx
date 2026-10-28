@@ -13,6 +13,8 @@ import {
   Lock,
   Eye,
   EyeOff,
+  ChevronLeft,
+  ChevronRight,
   ArrowRight,
   Headphones,
   Home,
@@ -20,8 +22,6 @@ import {
   Calendar,
   Settings,
   BookOpen,
-  ChevronLeft,
-  ChevronRight,
   TrendingUp,
   AlertCircle,
   CheckCircle2,
@@ -154,7 +154,7 @@ export default function LoginPage() {
       color: string;
     }> = [];
 
-    const colors = ["rgba(56, 189, 248, ", "rgba(168, 85, 247, ", "rgba(99, 102, 241, ", "rgba(236, 72, 153, "];
+    const colors = ["rgba(103, 205, 192, ", "rgba(56, 189, 168, ", "rgba(115, 177, 209, ", "rgba(226, 239, 245, "];
 
     for (let i = 0; i < 45; i++) {
       particles.push({
@@ -346,11 +346,10 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <img
-              src="/images/rathinam-logo.svg"
-              alt="Rathinam Global (Deemed to be University) Exam Cell"
-              className="drop-shadow-lg hover:scale-105 transition-transform duration-300"
-            />
+            <div className="login-brand-lockup" aria-label="Rathinam Global Exam Cell">
+              <span className="login-brand-mark">RG</span>
+              <span className="login-brand-name">Rathinam Global<span>EXAM CELL PORTAL</span></span>
+            </div>
           </motion.div>
 
           {/* Smart Academic Platform Badge */}
@@ -1008,7 +1007,7 @@ export default function LoginPage() {
               ) : (
                 <>
                   <span>Sign In</span>
-                  <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform duration-300" />
+                  <ArrowRight size={18} className="group-hover:-rotate-12 transition-transform duration-300" />
                 </>
               )}
             </motion.button>

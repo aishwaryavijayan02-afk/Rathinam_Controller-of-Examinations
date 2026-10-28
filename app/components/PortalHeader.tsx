@@ -14,6 +14,7 @@ import {
   Settings,
   Edit3,
   X,
+  ChevronRight,
   ArrowRight,
   User,
   Users,
@@ -23,7 +24,6 @@ import {
   Shield,
   Clock,
   Sparkles,
-  ChevronRight,
   Layers,
   HelpCircle,
   Menu,
@@ -885,7 +885,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <aside
-          className="mobile-drawer-aside"
+          className="mobile-drawer-aside digital-vfx-sidebar"
           onClick={(e) => e.stopPropagation()}
         >
           <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -900,16 +900,10 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                 marginBottom: "14px",
               }}
             >
-              <img
-                src="/images/rgu-logo.png"
-                alt="Rathinam Global (Deemed to be University)"
-                style={{
-                  maxHeight: "34px",
-                  width: "auto",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 0 10px rgba(99, 102, 241, 0.4))",
-                }}
-              />
+              <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)">
+                <span className="brand-orbit-mark">RG</span>
+                <span className="brand-orbit-name">Rathinam Global</span>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}

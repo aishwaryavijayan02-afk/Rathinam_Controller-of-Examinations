@@ -16,10 +16,10 @@ import {
   Printer,
   Settings,
   Shield,
+  ChevronRight,
   ArrowRight,
   Database,
   Hourglass,
-  ChevronRight,
   Headphones,
   Info,
   Layers,
@@ -595,7 +595,7 @@ export default function DashboardPage() {
       }}
     >
       {/* ================================= SIDEBAR ================================= */}
-      <aside
+      <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
           background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
@@ -614,17 +614,10 @@ export default function DashboardPage() {
           {/* RGU Logo */}
           {/* RGU Logo with 3D ambient glow */}
           <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
-            <img
-              src="/images/rgu-logo.png"
-              alt="Rathinam Global (Deemed to be University)"
-              style={{
-                maxHeight: "38px",
-                width: "auto",
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 12px rgba(99, 102, 241, 0.35))",
-                transition: "filter 0.3s ease",
-              }}
-            />
+            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)">
+              <span className="brand-orbit-mark">RG</span>
+              <span className="brand-orbit-name">Rathinam Global</span>
+            </div>
           </div>
 
           {/* Navigation Items with 3D Glow Icons and Animations */}

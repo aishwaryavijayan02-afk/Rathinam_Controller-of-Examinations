@@ -10,10 +10,10 @@ import {
   LayoutGrid,
   ShieldCheck,
   ChevronLeft,
+  ArrowRight,
   Headphones,
   Search,
   SlidersHorizontal,
-  ArrowRight,
   Info,
   Check,
   Star,
@@ -97,7 +97,7 @@ export default function FacultyPage() {
         {/* RGU Logo */}
         <div className="sidebar-logo">
           <img
-            src="/images/rgu-logo.png"
+            src="/images/rgu-logo.svg"
             alt="Rathinam Global (Deemed to be University)"
           />
         </div>
