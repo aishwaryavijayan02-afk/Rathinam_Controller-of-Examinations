@@ -108,7 +108,7 @@ export default function DashboardPage() {
       const u = authStore.getCurrentUser();
       setCurrentUser(u);
       setFacultyData(examStore.getStaffFaculty(u.role));
-      setSyllabusApprovals(examStore.getSyllabusApprovals());
+      setSyllabusApprovals(examStore.getSyllabusApprovalsForUser(u.role, u.email, u.name));
       if (u.role === "HOD" || u.role === "DEAN" || u.role === "COE") {
         setActiveTab("staff-work-status");
       }
@@ -122,7 +122,7 @@ export default function DashboardPage() {
     const loadData = () => {
       setSubjectsData(examStore.getSubjects());
       setFacultyData(examStore.getStaffFaculty(currentUser.role));
-      setSyllabusApprovals(examStore.getSyllabusApprovals());
+      setSyllabusApprovals(examStore.getSyllabusApprovalsForUser(currentUser.role, currentUser.email, currentUser.name));
     };
     loadData();
     window.addEventListener("exam-cell-store-update", loadData);

@@ -2788,6 +2788,34 @@ export const examStore = {
     return cleaned;
   },
 
+  /**
+   * Staff should only see the syllabus records they submitted. Review roles
+   * (HOD, DEAN and COE) need the complete queue for verification and approval.
+   */
+  getSyllabusApprovalsForUser(role?: string, userEmail?: string, userName?: string): SyllabusApprovalItem[] {
+    const allApprovals = this.getSyllabusApprovals();
+    if ((role || "").toUpperCase() !== "STAFF") return allApprovals;
+
+    const email = (userEmail || "").toLowerCase().trim();
+    const name = (userName || "")
+      .toLowerCase()
+      .replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "")
+      .trim();
+
+    return allApprovals.filter((approval) => {
+      const submittedEmail = (approval.submitterEmail || "").toLowerCase().trim();
+      const submittedName = (approval.submittedBy || "")
+        .toLowerCase()
+        .replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "")
+        .trim();
+
+      return Boolean(
+        (email && submittedEmail === email) ||
+        (name && submittedName && (submittedName === name || submittedName.includes(name) || name.includes(submittedName)))
+      );
+    });
+  },
+
   clearAllSyllabusApprovals(): void {
     saveToStorage("syllabus_approvals", []);
     notifyUpdate();
