@@ -289,6 +289,27 @@ export default function ApprovalPage() {
   // Auth User State
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
 
+  const handleApproveSyllabus = () => {
+    if (!selectedSyllabus) return;
+    const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + ", " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    const role = currentUser.role;
+    const updates: Partial<SyllabusApprovalItem> = role === "HOD"
+      ? { stage: "dean", status: "Approved", hodStatus: "Approved", hodName: currentUser.name, hodDate: now, deanStatus: "Pending", remarks: `Verified by HOD ${currentUser.name}. Forwarded to Dean for academic approval.` }
+      : role === "DEAN"
+      ? { stage: "coe", status: "Approved", deanStatus: "Approved", deanName: currentUser.name, deanDate: now, coeStatus: "Pending", remarks: `Approved by Dean ${currentUser.name}. Forwarded to COE for final review.` }
+      : role === "COE"
+      ? { stage: "coe", status: "Approved", coeStatus: "Approved", coeName: currentUser.name, coeDate: now, remarks: `Final syllabus approval completed by COE ${currentUser.name}.` }
+      : {};
+
+    if (Object.keys(updates).length === 0) return;
+    const updated = examStore.updateSyllabusApproval(selectedSyllabus.id, updates);
+    if (updated) {
+      setSelectedSyllabus(updated);
+      triggerToast(role === "HOD" ? "Syllabus verified and forwarded to Dean." : role === "DEAN" ? "Syllabus approved and forwarded to COE." : "Syllabus final approval completed.");
+      window.setTimeout(() => setSelectedSyllabus(null), 900);
+    }
+  };
+
   useEffect(() => {
     const handleAuth = () => {
       setCurrentUser(authStore.getCurrentUser());
@@ -2148,6 +2169,7 @@ export default function ApprovalPage() {
               code={selectedSyllabus.courseCode}
               semester={selectedSyllabus.semester}
               department={selectedSyllabus.department}
+              fileUrl={selectedSyllabus.documentData || null}
             />
             <div style={{ display: "none", padding: "20px", maxHeight: "calc(86vh - 110px)", overflowY: "auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "16px" }}>
@@ -2202,6 +2224,16 @@ export default function ApprovalPage() {
                   </div>
                 );
               })()}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "12px 18px", borderTop: "1px solid #dbeafe", background: "#f8fafc" }}>
+              <div style={{ fontSize: "11px", color: "#64748b" }}>
+                {selectedSyllabus.hodStatus === "Approved" ? "Verified and forwarded in the approval workflow." : "Review the complete Unit 1–5 document before forwarding."}
+              </div>
+              {(currentUser.role === "HOD" || currentUser.role === "DEAN" || currentUser.role === "COE") && (
+                <button type="button" onClick={handleApproveSyllabus} disabled={currentUser.role === "HOD" ? selectedSyllabus.hodStatus === "Approved" : currentUser.role === "DEAN" ? selectedSyllabus.deanStatus === "Approved" : selectedSyllabus.coeStatus === "Approved"} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "10px 15px", border: "none", borderRadius: "9px", background: "linear-gradient(135deg, #16a34a, #15803d)", color: "#ffffff", fontSize: "11px", fontWeight: 850, cursor: "pointer", opacity: (currentUser.role === "HOD" ? selectedSyllabus.hodStatus === "Approved" : currentUser.role === "DEAN" ? selectedSyllabus.deanStatus === "Approved" : selectedSyllabus.coeStatus === "Approved") ? 0.55 : 1 }}>
+                  <CheckCircle2 size={15} /> {currentUser.role === "HOD" ? "Verify & Send to Dean" : currentUser.role === "DEAN" ? "Approve & Send to COE" : "Final Approve"}
+                </button>
+              )}
             </div>
           </div>
         </div>

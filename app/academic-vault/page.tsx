@@ -44,6 +44,15 @@ type SyllabusUploadFormat = "excel" | "word" | "pdf" | "diagram";
 
 const cleanCell = (value: unknown) => String(value ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Unable to preserve the uploaded document."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function parseCsvRows(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -447,6 +456,15 @@ export default function AcademicVaultPage() {
       "",
       "The syllabus was uploaded and ingested successfully. HOD verification can be completed from this review record.",
     ].join("\n");
+    let originalDocumentData = "";
+    if (syllabusFile) {
+      try {
+        originalDocumentData = await readFileAsDataUrl(syllabusFile);
+      } catch {
+        // The extracted full text preview remains available even if the
+        // browser cannot persist the original binary document.
+      }
+    }
     examStore.saveSyllabusApproval({
       courseCode: subItem.code,
       courseName: subItem.name,
@@ -470,6 +488,7 @@ export default function AcademicVaultPage() {
       documentName: syllabusFileName || `${subItem.name}.docx`,
       documentFormat: syllabusFormat,
       documentText: documentPreview,
+      documentData: originalDocumentData || undefined,
     });
 
     setSavedSyllabus({ name: subItem.name, code: subItem.code });

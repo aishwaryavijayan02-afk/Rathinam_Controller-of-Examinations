@@ -523,6 +523,7 @@ export interface SyllabusApprovalItem {
   documentName?: string;
   documentFormat?: string;
   documentText?: string;
+  documentData?: string;
 }
 
 export interface SubjectAllocationItem {
@@ -2867,6 +2868,7 @@ export const examStore = {
       documentName: item.documentName,
       documentFormat: item.documentFormat,
       documentText: item.documentText,
+      documentData: item.documentData,
     };
     list.unshift(savedItem);
     saveToStorage("syllabus_approvals", list);
